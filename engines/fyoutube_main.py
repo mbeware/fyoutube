@@ -1,9 +1,12 @@
 import time
-import Config
-from Config import log_channel
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from core import Config
+from core.Config import log_channel
 
-from fyoutube_yt_dlp import download_all_video_from_channel
-from Config import messagelog
+from .fyoutube_yt_dlp import download_all_video_from_channel
+from core.Config import messagelog
 
 
 

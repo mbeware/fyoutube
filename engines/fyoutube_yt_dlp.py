@@ -1,17 +1,20 @@
 import os
 import sys
 import subprocess
-import Config
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from core import Config
 from typing import Any
 from pathlib import Path
-from Config import Request_type
+from core.Config import Request_type
 
 import yt_dlp
 
 
 
 
-from Config import messagelog
+from core.Config import messagelog
 
 
 

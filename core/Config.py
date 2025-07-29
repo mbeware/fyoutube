@@ -44,7 +44,14 @@ class UserConfig:
         filename="baseconfig.toml",
         default_config=None,
     ):
-        self.config_path = user_config_path(app_name, org_name) / filename
+        from pathlib import Path
+        if isinstance(filename, (str, Path)):
+            if str(filename).endswith('.toml') and ('/' in str(filename) or '\\' in str(filename)):
+                self.config_path = Path(filename)
+            else:
+                self.config_path = user_config_path(app_name, org_name) / filename
+        else:
+            self.config_path = user_config_path(app_name, org_name) / filename
         self.default_config = default_config or {"Config": {"Empty":"True"},}
         self._ensure_config_file()
         self.data = self._load()
@@ -139,6 +146,63 @@ BaseConfig={
                 "INTERVAL":"2",
                 "REQUESTS":"1",
                 "MAX_INTERVAL":"20",
+            },
+            "Download": {
+                "format": "best",
+                "quiet": True,
+                "force_write_download_archive": True,
+                "skip_download": False,
+                "subtitleslangs": "all,-live_chat",
+                "embedsubtitles": True,
+                "noplaylist": False,
+                "remuxvideo": "mkv",
+                "noprogress": False,
+                "xattrs": True,
+                "match_filter": "live_status!~=?'post_live|is_live|is_upcoming'&availability~=?'unlisted|public'",
+                "ignoreerrors": "only_download",
+                "check_formats": "selected",
+                "sleep_interval_subtitles": 1,
+                "sleep_interval": 10,
+                "sleep_interval_requests": 1,
+                "max_sleep_interval": 20,
+                "download_archive": "************************"
+            },
+            "Info": {
+                "quiet": True,
+                "force_write_download_archive": True,
+                "skip_download": True,
+                "noplaylist": False,
+                "forceprint": "%(id)s",
+                "extract_flat": "in_playlist",
+                "noprogress": False,
+                "concurrent_fragment_downloads": 4
+            },
+            "Debug": {
+                "verbose": False,
+                "print_to_file": False,
+                "restrictfilenames": False,
+                "break_on_existing": False,
+                "break_per_url": False,
+                "force_keyframes_at_cuts": False,
+                "ffmpeg_location": ""
+            },
+            "General": {
+                "no_warnings": False,
+                "forcejson": False,
+                "dump_single_json": False,
+                "simulate": False,
+                "overwrites": False,
+                "writedescription": False,
+                "writeinfojson": False,
+                "clean_infojson": False,
+                "allow_playlist_files": False,
+                "writelink": False,
+                "writeurllink": False,
+                "writewebloclink": False,
+                "writedesktoplink": False,
+                "writesubtitles": False,
+                "writeautomaticsub": False,
+                "progress_template": "download"
             }
         }
  
@@ -325,7 +389,21 @@ i_VERSIONS: dict[str, str] = {
 
 
 def run_config():
-    print("Running GUI configuration dialog...")
+    try:
+        import sys
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from gui.config_editor import ConfigEditor
+        import tkinter as tk
+        root = tk.Tk()
+        app = ConfigEditor(root)
+        root.mainloop()
+    except ImportError as e:
+        messagelog.error(f"GUI dependencies not available: {e}")
+        print("GUI configuration not available. Please install required dependencies.")
+    except Exception as e:
+        messagelog.error(f"Error launching GUI: {e}")
+        print(f"Error launching GUI configuration: {e}")
 
 def run_install():
     print("Running installation process...")
@@ -421,3 +499,56 @@ def buildtemplate(nuggetlist:list, bannednuggetlist:list=[], separator:str|None=
             if separator:
                 template += separator
     return template
+
+def load_config_to_options(config_file_path=None):
+    """Load configuration from TOML file into OptionDescriptor instances"""
+    try:
+        if config_file_path:
+            from pathlib import Path
+            USER.config_path = Path(config_file_path)
+            USER.reload()
+        
+        for section_name in ["Download", "Info", "Debug", "General"]:
+            if hasattr(USER, section_name):
+                section_config = getattr(USER, section_name)
+                
+                for option_name, option in all_options.items():
+                    if option_name in section_config:
+                        value = section_config[option_name]
+                        
+                        if section_name == "Download" and (option.download or option.download_required):
+                            option.download_value = value
+                        elif section_name == "Info" and (option.info or option.info_required):
+                            option.info_value = value
+                        elif section_name == "Debug" and option.debug:
+                            option.debug_value = value
+                            
+        messagelog.info("Configuration loaded successfully into OptionDescriptor instances")
+            
+    except Exception as e:
+        messagelog.error(f"Failed to load config: {e}")
+        raise
+
+def save_options_to_config():
+    """Save OptionDescriptor values back to TOML configuration"""
+    try:
+        for section_name in ["Download", "Info", "Debug", "General"]:
+            if not hasattr(USER, section_name):
+                setattr(USER, section_name, {})
+            
+            section_config = getattr(USER, section_name)
+            
+            for option_name, option in all_options.items():
+                if section_name == "Download" and option.download_value is not None:
+                    section_config[option_name] = option.download_value
+                elif section_name == "Info" and option.info_value is not None:
+                    section_config[option_name] = option.info_value
+                elif section_name == "Debug" and option.debug_value is not None:
+                    section_config[option_name] = option.debug_value
+        
+        USER.save()
+        messagelog.info("OptionDescriptor values saved to configuration")
+            
+    except Exception as e:
+        messagelog.error(f"Failed to save config: {e}")
+        raise

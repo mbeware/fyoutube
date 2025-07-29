@@ -1,9 +1,9 @@
-import Config
+from . import Config
 import argparse
 from argparse import  Action
 from types import ModuleType
 from importlib import import_module
-from Config import all_options, messagelog
+from .Config import all_options, messagelog
 
 global g_args
 
@@ -40,6 +40,10 @@ def load_fyoutube_version(version:str)->ModuleType:
         messagelog.info(message)
     else:
         print(message)
+    
+    if module_name.startswith('fyoutube_'):
+        module_name = f"engines.{module_name}"
+    
     return import_module(module_name)
 
 
@@ -64,6 +68,10 @@ def define_arguments(parser:argparse.ArgumentParser)->argparse.ArgumentParser:
         action='store_true',
         default=False
         
+    )
+    parser.add_argument(
+        "--config-file", "-c", type=str,
+        help="Specify custom configuration file path"
     )
     helpconfig = "Set configuration options for fyoutube:\n"
     for key in configurables.keys():

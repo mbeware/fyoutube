@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 from importlib import import_module
 from inspect import getmembers
-from fyoutube_download import download_video
-from Config import get_channel_name
+from engines.fyoutube_download import download_video
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from core.Config import get_channel_name
 import os
 from datetime import datetime
 

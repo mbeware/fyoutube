@@ -2,13 +2,16 @@ import os
 import sys
 import subprocess
 import time
-import Config
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from core import Config
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from Config import messagelog
+from core.Config import messagelog
 
-import manage_arguments
+from core import manage_arguments
 
 
 
